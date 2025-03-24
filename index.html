@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove BG</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        #preview, #result { max-width: 100%; margin: 10px auto; display: none; }
+        button { padding: 10px 15px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>Remove Background Gambar</h2>
+    <input type="file" id="upload" accept="image/*">
+    <br>
+    <img id="preview" src="" alt="Preview Gambar">
+    <br>
+    <button id="removeBgBtn">Hapus Background</button>
+    <br>
+    <img id="result" src="" alt="Hasil Gambar">
+    <br>
+    <a id="download" style="display:none;" download="removed-bg.png">Download Hasil</a>
+
+    <script>
+        document.getElementById('upload').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview').src = e.target.result;
+                document.getElementById('preview').style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('removeBgBtn').addEventListener('click', async function() {
+            let fileInput = document.getElementById('upload');
+            if (!fileInput.files.length) {
+                alert("Pilih gambar terlebih dahulu!");
+                return;
+            }
+
+            let file = fileInput.files[0];
+            let formData = new FormData();
+            formData.append("file", file);
+
+            let uploadResponse = await fetch("https://8030.us.kg/api/upload.php", {
+                method: "POST",
+                body: formData
+            });
+
+            let uploadResult = await uploadResponse.json();
+            if (!uploadResult.status || !uploadResult.result.url) {
+                alert("Gagal mengunggah gambar!");
+                return;
+            }
+
+            let uploadedImageUrl = uploadResult.result.url;
+            let removeBgUrl = `https://api.botcahx.eu.org/api/tools/removebg?url=${encodeURIComponent(uploadedImageUrl)}&apikey=rnt6DHnb`;
+
+            let removeBgResponse = await fetch(removeBgUrl);
+            let removeBgResult = await removeBgResponse.json();
+
+            if (!removeBgResult.status || !removeBgResult.url?.result) {
+                alert("Gagal menghapus latar belakang!");
+                return;
+            }
+
+            let removedBgImageUrl = removeBgResult.url.result;
+            document.getElementById('result').src = removedBgImageUrl;
+            document.getElementById('result').style.display = "block";
+
+            let downloadLink = document.getElementById('download');
+            downloadLink.href = removedBgImageUrl;
+            downloadLink.style.display = "block";
+        });
+    </script>
+
+</body>
+</html>
